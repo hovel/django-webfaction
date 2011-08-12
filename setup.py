@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
         name='django-webfaction',
-        version='1.1',
+        version='1.2',
         packages=['webfaction'],
         author='Pavel Zhukov',
         author_email='gelios@gmail.com',
@@ -14,5 +14,6 @@ setup(
         long_description = open('README.rst').read(),
         license='GPL',
         keywords='webfaction, django',
-        url='http://bitbucket.org/zeus/webfaction/'
-        )
+        url='http://bitbucket.org/zeus/webfaction/',
+        include_package_data = True,
+)
