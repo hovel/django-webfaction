@@ -49,7 +49,7 @@ class EmailBackend(BaseEmailBackend):
             ps.stdin.write(email_message.message().as_string())
             ps.stdin.flush()
             ps.stdin.close()
-            return not ps.wait()
+            return
         except:
             if not self.fail_silently:
                 raise
