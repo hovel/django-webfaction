@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # vim:fileencoding=utf-8
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
         name='django-webfaction',
-        version='1.2',
-        packages=['webfaction'],
+        version='1.4',
+        packages=find_packages(),
         author='Pavel Zhukov',
         author_email='gelios@gmail.com',
         description='Collection of tools to run django on webfaction more seamless',
@@ -16,4 +16,5 @@ setup(
         keywords='webfaction, django',
         url='http://bitbucket.org/zeus/webfaction/',
         include_package_data = True,
+        install_requires = [],
 )
