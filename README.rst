@@ -1,5 +1,5 @@
 Django-Webfaction
-===========
+=================
 
 Collection of tools to run django on webfaction more seamless
 

@@ -6,7 +6,7 @@ from setuptools import setup
 
 setup(
         name='django-webfaction',
-        version='1.0',
+        version='1.1',
         packages=['webfaction'],
         author='Pavel Zhukov',
         author_email='gelios@gmail.com',
