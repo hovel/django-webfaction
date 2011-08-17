@@ -14,7 +14,7 @@ setup(
         long_description = open('README.rst').read(),
         license='GPL',
         keywords='webfaction, django',
-        url='http://bitbucket.org/zeus/webfaction/',
+        url='http://bitbucket.org/zeus/django-webfaction/',
         include_package_data = True,
         install_requires = [],
 )

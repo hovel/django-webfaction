@@ -9,6 +9,7 @@ import threading
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
 from subprocess import Popen,PIPE
+import subprocess
 
 class EmailBackend(BaseEmailBackend):
     def __init__(self, fail_silently=False, **kwargs):
@@ -45,7 +46,7 @@ class EmailBackend(BaseEmailBackend):
             return False
         try:
             ps = Popen(["sendmail"]+list(email_message.recipients()), \
-                       stdin=PIPE)
+                       stdin=PIPE, creationflags=subprocess.CREATE_NEW_CONSOLE)
             ps.stdin.write(email_message.message().as_string())
             ps.stdin.flush()
             ps.stdin.close()
