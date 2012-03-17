@@ -16,5 +16,14 @@ setup(
         keywords='webfaction, django',
         url='http://bitbucket.org/zeus/django-webfaction/',
         include_package_data = True,
-        install_requires = [],
+        install_requires = [
+            'argparse',
+            'keyring',
+            'texttable',
+        ],
+        entry_points = {
+            'console_scripts': [
+                'webfactionctl = webfactionctl:main'
+            ]
+        }
 )
