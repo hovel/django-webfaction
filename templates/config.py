@@ -1,7 +1,7 @@
-project_name = '{{ PROJECT_NAME }}'
+app_name = '{{ APP_NAME }}'
 virtualenv_dir_name = '{{ VIRTUALENV_NAME }}'
 bind = "0.0.0.0:{{ PORT }}"
-logfile = '/home/{{ USER }}/logs/user/{{ PROJECT_NAME }}.log'
+logfile = '/home/{{ USER }}/logs/user/{{ APP_NAME }}.log'
 loglevel = 'info'
 max_requests = 10000
 preload_app = True
@@ -10,7 +10,7 @@ import os
 ROOT = os.path.dirname(os.path.realpath(__file__))
 VIRTUAL_ENV = os.path.join(ROOT, virtualenv_dir_name)
 django_settings = 'settings'
-pythonpath = os.path.join(ROOT, project_name)
+pythonpath = os.path.join(ROOT, app_name)
 
 # Here we activate virtualenv
 # If you have no virtualenv, jsut disable this block

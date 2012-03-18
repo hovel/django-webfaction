@@ -10,11 +10,20 @@ import string
 import re
 from texttable import Texttable
 from webfaction.api import WebfactionAPI
+import xmlrpclib
 
 __author__ = 'zeus'
 __version__ = '0.1'
 
+GUNICORN_CONFIG_TEMPLATE = 'https://github.com/hovel/django-webfaction/blob/master/templates/config.py'
+GUNICORN_CONFIG_RUN_SCRIPT = 'https://github.com/hovel/django-webfaction/blob/master/templates/gunicorn.sh'
+SETTINGS_LOCAL_TEMPLATE = 'https://github.com/hovel/django-webfaction/blob/master/templates/settings_local.py'
+
+
 VALID_SYMBOLS = re.compile('^\w+$')
+
+def _gen_password(lfrom=8, lto=10):
+    return ''.join((random.choice(string.letters+string.digits) for _ in xrange(random.randint(8,10))))
 
 def _get_config_filename(args):
     if hasattr(args, 'c'):
@@ -93,7 +102,7 @@ def _create_db(args):
     if args.password:
         ags.append(args.password)
     else:
-        password = ''.join((random.choice(string.letters+string.digits) for _ in xrange(random.randint(8,10))))
+        password = _gen_password()
         print('Password not provided, so I generate a password for you:\n%s' % password)
         ags.append(password)
     api = _login(args)
@@ -132,6 +141,7 @@ def _state(args):
 
 def _setup_django_project(args):
     print('\nLet\'s prepare your app and webfaction for launch!\n')
+    username, password = _read_config(args)
     api = _login(args)
     ms = api.list_machines()
     m_names = [m['name'] for m in ms]
@@ -150,7 +160,23 @@ def _setup_django_project(args):
             target_machine = None
     print('\nNew app will be placed on %s\n' % target_machine)
 
+    try:
+        pip = api.system('ls -l ~/bin/pip-2.7')
+    except xmlrpclib.Fault:
+        pip = None
+    prepare_machine = False
+    recommend_prepare = 'N'
+    if not pip:
+        print('Looks like this server doesn\'t prepared for django project')
+        recommend_prepare = 'Y'
+    print('It\'s recommend to have pip, virtualenv, djagno-webfaction and mercurial')
+    print('for python 2.7 to be installed')
+    print('I can install this tools for you, if you want')
+    prepare_machine = raw_input('Should i do it? Y/N [%s]: ' % recommend_prepare)
+    prepare_machine = (recommend_prepare=='Y') if not prepare_machine else (prepare_machine=='Y')
+
     app_name = None
+    api = _login(args, machine=target_machine)
     apps = api.list_apps()
     a_names = [a['name'] for a in apps]
     while not app_name:
@@ -162,23 +188,32 @@ def _setup_django_project(args):
         if not VALID_SYMBOLS.match(app_name):
             print('App name that you enter is not valid (use A-Z a-z 0-9 or uderscore symbols only)')
             app_name = None
-    print('\nNew app will named as %s\n' % app_name)
+    print('\nNew app will named as %s' % app_name)
+    print('This app will live in /home/%s/webapps/%s/\n' % (username, app_name))
+    print('This directory will contain a gunicorn run script,')
+    print('a gunicorn config and your directory with your project')
 
-    print('If your django app contains static files (typical) they should be serverd')
+    project_name = raw_input('Please, tell me how you call your project [%s]: ' % app_name)
+
+    print('\nIf your django app contains static files (typical) they should be serverd')
     print('by front-end server (nginx) directy, in webfaction this means to create')
     print('a special \'static\' application that will contain static files')
     print('I will help you to configure your app to use this app at the end of')
     print('installation process.')
-    create_static = None
-    while create_static=='Y' or create_static=='N':
-        create_static = raw_input('Should i create static app for you? [Y]')
+    create_static = static_app_name = None
+    while not (create_static=='Y' or create_static=='N'):
+        create_static = raw_input('Should i create static app for you? Y/N [Y]: ')
         if not create_static:
             create_static = 'Y'
     create_static = True if create_static=='Y' else False
     if create_static:
         static_app_name = None
+        default_static_app_name = '%s_static' % app_name
         while not static_app_name:
-            static_app_name = raw_input('How should i call static app? [%s_staic]' % app_name)
+            static_app_name = raw_input('How should i call static app? [%s]' % default_static_app_name)
+            if not static_app_name:
+                static_app_name = default_static_app_name
+                break
             if static_app_name in a_names:
                 print('You already have app with same name, choose another one')
                 static_app_name = None
@@ -188,11 +223,77 @@ def _setup_django_project(args):
                 static_app_name = None
 
     create_env = None
-    while create_env=='Y' or create_env=='N':
-        create_env = raw_input('Should i create a virtualenv for your project (recommended)?[Y]')
+    while not(create_env=='Y' or create_env=='N'):
+        create_env = raw_input('Should i create a virtualenv for your project (recommended)? Y/N [Y]: ')
         if not create_env:
             create_env = 'Y'
     create_env = True if create_env=='Y' else False
+
+    create_db = db_type = db_name = db_password = None
+    while not(create_db=='Y' or create_db=='N'):
+        create_db = raw_input('Should i create a db for your project (recommended)? Y/N [Y]: ')
+        if not create_db:
+            create_db = 'Y'
+    create_db = True if create_db=='Y' else False
+    if create_db:
+        #TODO validate db_name and type
+        print('Note: all database names for your account should be prefixed with your username')
+        db_name = '%s_%s' % (username, raw_input('Please enter a name for new database: %s_' % username))
+        db_type = raw_input('Please specify database type (mysql/posgress) [mysql]: ')
+        if not db_type:
+            db_type = 'mysql'
+        random_passwd = _gen_password()
+        db_password = raw_input('Please choose a password for your database [%s]: ' % random_passwd)
+        if not db_password:
+            db_password = random_passwd
+
+    print('\n\nSo, i will do this tasks for you:')
+    print('-------------------------------')
+    if prepare_machine:
+        print('I will install pip, virtualenv, django-webfaction and' \
+              ' mercurial for python 2.7 on %s' % target_machine)
+    print('Install gunicorn globally for python 2.7')
+    print('Create new app %s on %s for django' % (app_name, target_machine))
+    if create_static:
+        print('Create new app %s on %s for serving static files' % (static_app_name, target_machine))
+    if create_db:
+        print('Create %s database %s on %s' % (db_type, db_name, target_machine))
+    if create_env:
+        print('I will create virtualenv in ~/webapps/%s/env' % app_name)
+    print('--------------------------------')
+    print('I will also place next files in ~/webapps/%s' % app_name)
+    print('gunicorn.sh - script that can be used to start/stop/restart app')
+    print('config.py - config for gunicorn and configure it for your new app')
+    print('settigs_local.py - a settings file for your new app')
+
+    ctn = raw_input('Should i continue? Y/N [Y]: ')
+    if ctn not in ['', 'Y']:
+        print('Ok, buy!')
+        return
+
+    if prepare_machine:
+        print('Prepearing your system...')
+        api.system('mkdir ~/lib/python2.7')
+        api.system('easy_install-2.7 pip')
+        api.system('~/bin/pip-2.7 install virtualenv mercurial django-webfaction')
+    print('Installing gunicorn...')
+    api.system('~/bin/pip-2.7 install gunicorn')
+    print('Creating custom app with port %s..' % app_name)
+    app_info = api.create_app(app_name, 'custom_app_with_port', False, '')
+    print(app_info)
+    venv_path = '~/webapps/%s/env' % app_name
+    print('Creating virtualenv at %s...' % venv_path)
+    api.system('~/bin/virtualenv --system-site-packages %s' % venv_path)
+    print('Creating static app...')
+    api.create_app(static_app_name, 'static_only', False, '')
+    print('Creating database')
+    api.create_db(db_name, db_type, db_password)
+    print('Loading gunicorn control scrpit, config and settings_local templates')
+    api.system('wget %s -O ~/webapps/%s/config.py' % (GUNICORN_CONFIG_TEMPLATE, app_name))
+    api.system('wget %s -O ~/webapps/%s/gunicorn.sh' % (GUNICORN_CONFIG_RUN_SCRIPT, app_name))
+    api.system('wget %s -O ~/webapps/%s/settings_local.py' % (SETTINGS_LOCAL_TEMPLATE, app_name))
+
+
 
 
 
@@ -238,8 +339,8 @@ def main():
     cmd = subparsers.add_parser('state', help='Short state of your machines (apps count, current ram usage)')
     cmd.set_defaults(func=_state)
 
-#    cmd = subparsers.add_parser('setup_django_project', help='prepare server, create virtualenv, create apps (django itself, static), create db on server, create settings_local for server, setup and prepare gunicorn, setup cronjob')
-#    cmd.set_defaults(func=_setup_django_project)
+    cmd = subparsers.add_parser('setup_django_project', help='prepare server, create virtualenv, create apps (django itself, static), create db on server, create settings_local for server, setup and prepare gunicorn, setup cronjob')
+    cmd.set_defaults(func=_setup_django_project)
 
 
     # Call selected function
