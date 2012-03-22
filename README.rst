@@ -15,14 +15,14 @@ Usage:
 Console utility
 ---------------
 
-Django webfaction contains `webfactionctl` utility that can be used to control your webfaction services from command-line.
+Django webfaction contains ``webfactionctl`` utility that can be used to control your webfaction services from command-line.
 
 1. You get access to basic commands like a list machines/apps/databases/ips/.. and crate apps and databases.
    For example to get list of your current dbs just run::
 
      webfactionctl list_dbs
 
-2. You can get extended info of your machines with current RAM usage, apps and processes with `state` command::
+2. You can get extended info of your machines with current RAM usage, apps and processes with ``state`` command::
 
     $ webfactionctl state
     Query machines list...
@@ -45,7 +45,7 @@ Django webfaction contains `webfactionctl` utility that can be used to control y
 Django deployment wizard
 ------------------------
 
-With `webfactionctl stup_django_project` you can run django deployment wizard that:
+With ``webfactionctl stup_django_project`` you can run django deployment wizard that:
 
 1. Prepare server by installing pip, virtualenv, gunicorn, django-webfaction globally for your account.
 2. Create main app for your project
