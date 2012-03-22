@@ -12,6 +12,48 @@ Installation:
 Usage:
 ======
 
+Console utility
+---------------
+
+Django webfaction contains `webfactionctl` utility that can be used to control your webfaction services from command-line.
+
+1. You get access to basic commands like a list machines/apps/databases/ips/.. and crate apps and databases.
+   For example to get list of your current dbs just run::
+
+     webfactionctl list_dbs
+
+2. You can get extended info of your machines with current RAM usage, apps and processes with `state` command::
+
+    $ webfactionctl state
+    Query machines list...
+    Query apps list...
+    Query machine state detail: Web210 Web217 Web223 Web317 Web327
+    +-----------+------------------+--------+--------------------+-----------+---------------+-----+
+    | ram_usage | operating_system |  name  |      location      | app_count | process_count | id  |
+    +===========+==================+========+====================+===========+===============+=====+
+    | 209708    | Centos5-32bit    | Web210 | Europe (Amsterdam) | 19        | 20            | 376 |
+    +-----------+------------------+--------+--------------------+-----------+---------------+-----+
+    | 43112     | Centos5-32bit    | Web217 | Europe (Amsterdam) | 2         | 7             | 386 |
+    +-----------+------------------+--------+--------------------+-----------+---------------+-----+
+    | 175352    | Centos5-32bit    | Web223 | Europe (Amsterdam) | 12        | 17            | 395 |
+    +-----------+------------------+--------+--------------------+-----------+---------------+-----+
+    | 8220      | Centos6-64bit    | Web317 | Europe (Amsterdam) | 6         | 7             | 445 |
+    +-----------+------------------+--------+--------------------+-----------+---------------+-----+
+    | 66092     | Centos6-64bit    | Web327 | Europe (Amsterdam) | 2         | 9             | 462 |
+    +-----------+------------------+--------+--------------------+-----------+---------------+-----+
+
+Django deployment wizard
+------------------------
+
+With `webfactionctl stup_django_project` you can run django deployment wizard that:
+
+1. Prepare server by installing pip, virtualenv, gunicorn, django-webfaction globally for your account.
+2. Create main app for your project
+3. Setup virtualenv for your main project
+4. Prepare gunicorn contorl script for your project
+5. Create static app for your project
+6. Prepare settings_local for your project
+
 Sending mail from local sendmail asynchronous
 ---------------------------------------------
 

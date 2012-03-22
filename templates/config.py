@@ -13,6 +13,7 @@ django_settings = 'settings'
 pythonpath = os.path.join(ROOT, app_name)
 
 # Here we activate virtualenv
-# If you have no virtualenv, jsut disable this block
-activate_this = os.path.join(VIRTUAL_ENV, 'bin/activate_this.py')
-execfile(activate_this, dict(__file__=activate_this))
+# If you have no virtualenv, jsut disable this block or leave virtualenv_dir_name unchanged
+if virtualenv_dir_name != '{{ VIRTUALENV_NAME }}':
+    activate_this = os.path.join(VIRTUAL_ENV, 'bin/activate_this.py')
+    execfile(activate_this, dict(__file__=activate_this))

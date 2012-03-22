@@ -15,9 +15,9 @@ import xmlrpclib
 __author__ = 'zeus'
 __version__ = '0.1'
 
-GUNICORN_CONFIG_TEMPLATE = 'https://github.com/hovel/django-webfaction/blob/master/templates/config.py'
-GUNICORN_CONFIG_RUN_SCRIPT = 'https://github.com/hovel/django-webfaction/blob/master/templates/gunicorn.sh'
-SETTINGS_LOCAL_TEMPLATE = 'https://github.com/hovel/django-webfaction/blob/master/templates/settings_local.py'
+GUNICORN_CONFIG_TEMPLATE = 'https://raw.github.com/hovel/django-webfaction/master/templates/config.py'
+GUNICORN_CONFIG_RUN_SCRIPT = 'https://raw.github.com/hovel/django-webfaction/master/templates/gunicorn.sh'
+SETTINGS_LOCAL_TEMPLATE = 'https://raw.github.com/hovel/django-webfaction/master/templates/settings_local.py'
 
 
 VALID_SYMBOLS = re.compile('^\w+$')
@@ -289,9 +289,34 @@ def _setup_django_project(args):
     print('Creating database')
     api.create_db(db_name, db_type, db_password)
     print('Loading gunicorn control scrpit, config and settings_local templates')
-    api.system('wget %s -O ~/webapps/%s/config.py' % (GUNICORN_CONFIG_TEMPLATE, app_name))
-    api.system('wget %s -O ~/webapps/%s/gunicorn.sh' % (GUNICORN_CONFIG_RUN_SCRIPT, app_name))
-    api.system('wget %s -O ~/webapps/%s/settings_local.py' % (SETTINGS_LOCAL_TEMPLATE, app_name))
+    api.system('wget %s -q -O ~/webapps/%s/config.py' % (GUNICORN_CONFIG_TEMPLATE, app_name))
+    api.system('wget %s -q -O ~/webapps/%s/gunicorn.sh' % (GUNICORN_CONFIG_RUN_SCRIPT, app_name))
+    api.system('wget %s -q -O ~/webapps/%s/settings_local.py' % (SETTINGS_LOCAL_TEMPLATE, app_name))
+    for rep in [
+        ('{{ USER }}', username),
+        ('{{ APP_NAME }}', app_name),
+        ('{{ PORT }}', app_info['port'])
+    ]:
+        api.replace_in_file('/home/%s/webapps/%s/config.py' % (username, app_name), rep)
+    if create_env:
+        api.replace_in_file('/home/%s/webapps/%s/config.py' % (username, app_name), ('{{ VIRTUALENV_NAME }}', venv_path))
+
+
+    for rep in [
+        ('{{ USER }}', username),
+        ('{{ APP_NAME }}', app_name),
+        ('{{ DB_NAME }}', db_name),
+        ('{{ DB_ENGINE }}', db_type),
+        ('{{ DB_PASSWORD }}', db_password),
+        ('{{ STATIC_APP }}', static_app_name),
+    ]:
+        api.replace_in_file('/home/%s/webapps/%s/settings_local.py' % (username, app_name), rep)
+
+    print('\nOk, now you are just a two step away from deploy your project on webfaction server')
+    print('1. Copy/clone your project to ~/webapps/%s/' % app_name)
+    print('2. Copy ~/webapps/%s/settings.py to your project directory and ensure that your settings.py import * from settings_local.py at the end')
+    print('3. You\'re done! You can do syncdb/migrate/collectstatic...')
+    # TODO: Download fabfile template
 
 
 
