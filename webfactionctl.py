@@ -34,22 +34,32 @@ def _get_config_filename(args):
 def _configure(args):
     config_filename = _get_config_filename(args)
     print('Saving your username and password in %s' % config_filename)
+    account = 'user'
+    if args.a:
+        print('Use account {0}\n \
+              To use commands from this account call\n \
+              webfactionctl later with -a {0}'.format(args.a))
+        account = 'user_{}'.format(args.a)
     if (not args.u) or (not args.p):
         raise ValueError('You should supply username and password (-u, -p options) for using configure')
     config = ConfigParser()
     config.read(config_filename)
-    if not config.has_section('user'):
-        config.add_section('user')
-    config.set('user', 'username', args.u)
-    config.set('user', 'password', args.p)
+    if not config.has_section(account):
+        config.add_section(account)
+    config.set(account, 'username', args.u)
+    config.set(account, 'password', args.p)
     config.write(open(config_filename, 'w'))
 
 def _read_config(args=None):
     config_filename = _get_config_filename(args)
+    account = 'user'
+    if args.a:
+        account = 'user_{}'.format(args.a)
+    print('Using account {}'.format(account))
     config = ConfigParser()
     config.read(config_filename)
-    username = config.get('user', 'username', None)
-    password = config.get('user', 'password', None)
+    username = config.get(account, 'username', None)
+    password = config.get(account, 'password', None)
     return username, password
 
 def _login(args=None, machine=None):
@@ -62,7 +72,7 @@ def _login(args=None, machine=None):
         username = args.u
         password = args.p
     else:
-        username, password = _read_config()
+        username, password = _read_config(args)
     if (not username) or (not password):
         raise ValueError('Username/password not provided via command line options and not found in config')
     api = WebfactionAPI()
@@ -281,13 +291,17 @@ def _setup_django_project(args):
     print('Creating custom app with port %s..' % app_name)
     app_info = api.create_app(app_name, 'custom_app_with_port', False, '')
     print(app_info)
-    venv_path = '~/webapps/%s/env' % app_name
-    print('Creating virtualenv at %s...' % venv_path)
-    api.system('~/bin/virtualenv --system-site-packages %s' % venv_path)
-    print('Creating static app...')
-    api.create_app(static_app_name, 'static_only', False, '')
-    print('Creating database')
-    api.create_db(db_name, db_type, db_password)
+    if create_env:
+        venv_path = '~/webapps/%s/env' % app_name
+        print('Creating virtualenv at %s...' % venv_path)
+        api.system('~/bin/virtualenv --system-site-packages %s' % venv_path)
+    if create_static:
+        print('Creating static app...')
+        api.create_app(static_app_name, 'static_only', False, '')
+
+    if create_db:
+        print('Creating database')
+        api.create_db(db_name, db_type, db_password)
     print('Loading gunicorn control scrpit, config and settings_local templates')
     api.system('wget %s -q -O ~/webapps/%s/config.py' % (GUNICORN_CONFIG_TEMPLATE, app_name))
     api.system('wget %s -q -O ~/webapps/%s/gunicorn.sh' % (GUNICORN_CONFIG_RUN_SCRIPT, app_name))
@@ -310,7 +324,8 @@ def _setup_django_project(args):
         ('{{ DB_PASSWORD }}', db_password),
         ('{{ STATIC_APP }}', static_app_name),
     ]:
-        api.replace_in_file('/home/%s/webapps/%s/settings_local.py' % (username, app_name), rep)
+        if rep:
+            api.replace_in_file('/home/%s/webapps/%s/settings_local.py' % (username, app_name), rep)
 
     print('\nOk, now you are just a two step away from deploy your project on webfaction server')
     print('1. Copy/clone your project to ~/webapps/%s/' % app_name)
@@ -318,17 +333,16 @@ def _setup_django_project(args):
     print('3. You\'re done! You can do syncdb/migrate/collectstatic...')
     # TODO: Download fabfile template
 
-
-
-
-
-
 def main():
     parser = argparse.ArgumentParser(description="Control webfaction servers via API")
     subparsers = parser.add_subparsers()
     parser.add_argument('-u', help='username for connection (required if not stored in config)')
     parser.add_argument('-p', help='password for connection (required if not stored in config)')
     parser.add_argument('-m', help='machine to access (can be omitted to work with default machine)')
+    parser.add_argument('-a', help='account (if multiple accounts (username/passwords paris) is used,\n' \
+                                   ' specify during `configure` to save username and password pair as\n' \
+                                   ' a other than default account and use later to work with this account)')
+
     cmd = subparsers.add_parser('configure', help='Store security credentials in local config')
     cmd.set_defaults(func=_configure)
     for module in ['apps', 'domains', 'websites', 'dbs', 'machines', 'ips', 'users', 'emails', 'mailboxes', 'list_dns_overrides']:

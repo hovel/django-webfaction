@@ -17,12 +17,30 @@ Console utility
 
 Django webfaction contains ``webfactionctl`` utility that can be used to control your webfaction services from command-line.
 
-1. You get access to basic commands like a list machines/apps/databases/ips/.. and crate apps and databases.
+1. Setting up
+
+    1.1. You can save username and password in config to avoid entering them on each command,
+         to do this just run ``configure`` command providing username and password::
+
+           webfactionctl -u username -p password configure
+
+         and now you can run other commands without specifying login/password.
+
+    1.2. If you use multiple accounts (e.g. you manage your client accounts) you can save them in
+         config with ``-a`` key. Just run::
+
+           webfactionctl -u username2 -p password2 -a ac2 configure
+
+         and now if you call commands with ``-a ac2`` they will use username2 account::
+
+           webfactionctl -a ac2 list_machines
+
+2. You get access to basic commands like a list machines/apps/databases/ips/.. and crate apps and databases.
    For example to get list of your current dbs just run::
 
      webfactionctl list_dbs
 
-2. You can get extended info of your machines with current RAM usage, apps and processes with ``state`` command::
+3. You can get extended info of your machines with current RAM usage, apps and processes with ``state`` command::
 
     $ webfactionctl state
     Query machines list...
